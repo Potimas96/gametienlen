@@ -658,7 +658,7 @@
         
         lastPlay = { player: 0, cards: playedCards };
         selectedIndices = [];
-        renderCenterCards(playedCards, true); // Bật animation bài đánh
+        renderCenterCards(playedCards, true);
         renderHand();
         updateUI();
 
@@ -699,15 +699,65 @@
         }
     }
 
+    // AI BOT TRÍ TUỆ NHÂN TẠO NÂNG CẤP (BIẾT ĐÁNH SẢNH, SÁM, ĐÔI, ĐƠN)
+    function botFindAllCombos(botHand) {
+        let pairs = [];
+        let triples = [];
+        let straights = [];
+
+        // Tìm Đôi & Sám
+        let rankGroups = {};
+        botHand.forEach(c => {
+            if (!rankGroups[c.rankIdx]) rankGroups[c.rankIdx] = [];
+            rankGroups[c.rankIdx].push(c);
+        });
+
+        for (let r in rankGroups) {
+            if (rankGroups[r].length >= 2) pairs.push(rankGroups[r].slice(0, 2));
+            if (rankGroups[r].length >= 3) triples.push(rankGroups[r].slice(0, 3));
+        }
+
+        // Tìm Sảnh (từ độ dài lớn nhất đến nhỏ nhất, loại trừ lá 2)
+        let nonTwos = botHand.filter(c => c.rankIdx < 12);
+        let uniqueRanks = [...new Set(nonTwos.map(c => c.rankIdx))].sort((a,b) => a - b);
+        
+        for (let len = uniqueRanks.length; len >= 3; len--) {
+            for (let i = 0; i <= uniqueRanks.length - len; i++) {
+                let subRanks = uniqueRanks.slice(i, i + len);
+                let isSeq = true;
+                for (let j = 0; j < subRanks.length - 1; j++) {
+                    if (subRanks[j+1] - subRanks[j] !== 1) { isSeq = false; break; }
+                }
+                if (isSeq) {
+                    let straightCards = subRanks.map(r => botHand.find(c => c.rankIdx === r));
+                    straights.push(straightCards);
+                }
+            }
+        }
+
+        return { pairs, triples, straights };
+    }
+
     function botTurn() {
         if (isGameOver) return;
 
         let botHand = hands[currentTurn];
         let cardsToPlay = null;
+        let { pairs, triples, straights } = botFindAllCombos(botHand);
 
         if (!lastPlay || lastPlay.player === currentTurn) {
-            cardsToPlay = [botHand[0]];
+            // Đánh bài tự do: Ưu tiên xả Sảnh -> Sám -> Đôi -> Đơn lẻ
+            if (straights.length > 0) {
+                cardsToPlay = straights[0]; // Đánh sảnh dài nhất
+            } else if (triples.length > 0) {
+                cardsToPlay = triples[0];
+            } else if (pairs.length > 0) {
+                cardsToPlay = pairs[0];
+            } else {
+                cardsToPlay = [botHand[0]]; // Đánh lá nhỏ nhất
+            }
         } else {
+            // Chặn bài đối thủ
             const targetCombo = getCardCombo(lastPlay.cards);
             if (targetCombo) {
                 if (targetCombo.type === 'SINGLE') {
@@ -718,12 +768,24 @@
                         }
                     }
                 } else if (targetCombo.type === 'PAIR') {
-                    for (let i = 0; i < botHand.length - 1; i++) {
-                        if (botHand[i].rankIdx === botHand[i+1].rankIdx) {
-                            if (botHand[i+1].val > targetCombo.maxVal) {
-                                cardsToPlay = [botHand[i], botHand[i+1]];
-                                break;
-                            }
+                    for (let p of pairs) {
+                        if (isValidBeat(p, lastPlay.cards)) {
+                            cardsToPlay = p;
+                            break;
+                        }
+                    }
+                } else if (targetCombo.type === 'TRIPLE') {
+                    for (let t of triples) {
+                        if (isValidBeat(t, lastPlay.cards)) {
+                            cardsToPlay = t;
+                            break;
+                        }
+                    }
+                } else if (targetCombo.type === 'STRAIGHT') {
+                    for (let s of straights) {
+                        if (s.length === targetCombo.len && isValidBeat(s, lastPlay.cards)) {
+                            cardsToPlay = s;
+                            break;
                         }
                     }
                 }
@@ -733,7 +795,7 @@
         if (cardsToPlay) {
             hands[currentTurn] = botHand.filter(c => !cardsToPlay.includes(c));
             lastPlay = { player: currentTurn, cards: cardsToPlay };
-            renderCenterCards(cardsToPlay, true); // Bật animation bài đánh
+            renderCenterCards(cardsToPlay, true);
             updateUI();
             document.getElementById('status-msg').innerText = `${getRoleName(currentTurn)} đã đánh!`;
 
@@ -769,7 +831,6 @@
         return ['Bạn', 'Bot Trái', 'Bot Giữa', 'Bot Phải'][idx];
     }
 
-    /* Hàm render bài ra giữa bàn kèm hiệu ứng Animation */
     function renderCenterCards(cards, animate = false) {
         const centerEl = document.getElementById('center-cards');
         centerEl.innerHTML = '';
