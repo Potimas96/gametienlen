@@ -219,9 +219,11 @@ body {
     width: 100%;
     overflow-x: auto;
     display: flex;
-    justify-content: center;
+    /*justify-content: center;*/
+    justify-content: flex-start;
     padding: 22px 10px 8px 10px;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
 
 .hand-wrapper::-webkit-scrollbar {
@@ -233,10 +235,20 @@ body {
     justify-content: center;
     align-items: center;
     min-width: max-content;
+    margin-inline: auto;
 }
 
 .hand .card {
     margin-left: -24px; /* Chỉnh độ đè chồng lá bài */
+}
+
+@media (max-width: 767px) {
+    .hand .card {
+        width: min(48px, 12vw);
+        height: auto;
+        aspect-ratio: 48 / 74;
+        margin-left: calc(-1 * min(24px, 6vw));
+    }
 }
 
 @media (min-width: 400px) {
