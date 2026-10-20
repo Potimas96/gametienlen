@@ -56,6 +56,7 @@
             font-size: 11px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             position: relative;
+            transition: all 0.3s ease;
         }
 
         .player-info.active {
@@ -143,6 +144,7 @@
         .last-played-container {
             display: flex;
             justify-content: center;
+            gap: -20px;
         }
 
         /* Lá Bài */
@@ -228,23 +230,24 @@
         /* Controls */
         .controls {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             width: 100%;
             justify-content: center;
-            padding: 0 10px;
+            padding: 0 5px;
+            flex-wrap: wrap;
         }
 
         .btn {
             background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
             border: none;
             color: white;
-            padding: 8px 16px;
-            font-size: 13px;
+            padding: 8px 14px;
+            font-size: 12px;
             font-weight: bold;
             border-radius: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             cursor: pointer;
-            min-width: 80px;
+            min-width: 75px;
         }
 
         .btn:active { transform: scale(0.95); }
@@ -265,14 +268,14 @@
         }
 
         .status-msg {
-            font-size: 12px;
+            font-size: 13px;
             color: #f39c12;
             text-align: center;
-            min-height: 16px;
+            min-height: 18px;
             font-weight: bold;
         }
 
-        /* Modal Chọn cược & Kết quả */
+        /* Modal Chọn cược */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -358,7 +361,7 @@
 <!-- Toast Thông Báo Donate -->
 <div class="donate-toast" id="donate-toast">
     <span class="polymer-icon"></span>
-    <span id="donate-text">ông bô đã donate cho bà bô 100k</span>
+    <span>ông bô đã donate cho bà bô 100k</span>
 </div>
 
 <div class="table">
@@ -393,7 +396,7 @@
 
     <!-- Người chơi -->
     <div class="user-area">
-        <div class="player-info" style="min-width: 160px; margin-bottom: 4px;">
+        <div class="player-info" id="p0-info" style="min-width: 160px; margin-bottom: 4px;">
             <div class="player-name" style="color: #2ecc71;">Bạn (Chủ bàn)</div>
             <div class="money-badge"><span class="polymer-icon"></span><span id="p0-money">100k</span></div>
         </div>
@@ -430,172 +433,4 @@
     const SUITS = ['♠', '♣', '♦', '♥'];
     const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
     
-    // Quản lý tiền tệ
     let money = [100000, 100000, 100000, 100000];
-    let currentBet = 10000;
-
-    function loadSavedMoney() {
-        const saved = localStorage.getItem('game_money');
-        if (saved) {
-            money = JSON.parse(saved);
-        }
-        updateMoneyUI();
-    }
-
-    function formatMoney(amount) {
-        if (amount >= 1000000) return (amount / 1000000).toFixed(1) + 'M';
-        if (amount >= 1000) return (amount / 1000) + 'k';
-        return amount.toString();
-    }
-
-    function updateMoneyUI() {
-        for (let i = 0; i < 4; i++) {
-            document.getElementById(`p${i}-money`).innerText = formatMoney(money[i]);
-        }
-        localStorage.setItem('game_money', JSON.stringify(money));
-    }
-
-    // Hàm Thêm Tiền + Hiện Thông Báo Donate
-    function add100k() {
-        money[0] += 100000;
-        updateMoneyUI();
-        
-        // Hiển thị Toast Donate
-        const toast = document.getElementById('donate-toast');
-        toast.classList.add('show');
-        
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 2500);
-    }
-
-    function selectBet(bet) {
-        if (money[0] < bet) {
-            alert("Bạn không đủ tiền cược! Hãy bấm nút Donate để xin thêm tiền nhé.");
-            return;
-        }
-        currentBet = bet;
-        document.getElementById('current-bet-display').innerText = formatMoney(bet);
-        document.getElementById('bet-modal').style.display = 'none';
-        initGame();
-    }
-
-    // Logic Game
-    let deck = [];
-    let hands = [[], [], [], []];
-    let selectedIndices = [];
-
-    function createDeck() {
-        deck = [];
-        for (let r = 0; r < RANKS.length; r++) {
-            for (let s = 0; s < SUITS.length; s++) {
-                deck.push({ rank: RANKS[r], suit: SUITS[s], val: r * 4 + s });
-            }
-        }
-    }
-
-    function shuffleDeck() {
-        for (let i = deck.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [deck[i], deck[j]] = [deck[j], deck[i]];
-        }
-    }
-
-    function initGame() {
-        createDeck();
-        shuffleDeck();
-        hands = [[], [], [], []];
-        for (let i = 0; i < 52; i++) {
-            hands[i % 4].push(deck[i]);
-        }
-        sortHand();
-        renderHand();
-        updateUI();
-        document.getElementById('status-msg').innerText = "Ván mới bắt đầu - Đến lượt bạn!";
-    }
-
-    function sortHand() {
-        hands[0].sort((a, b) => a.val - b.val);
-        selectedIndices = [];
-        renderHand();
-    }
-
-    function renderHand() {
-        const handEl = document.getElementById('user-hand');
-        handEl.innerHTML = '';
-        hands[0].forEach((card, index) => {
-            const cardEl = document.createElement('div');
-            const isRed = card.suit === '♦' || card.suit === '♥';
-            cardEl.className = `card ${isRed ? 'red' : 'black'} ${selectedIndices.includes(index) ? 'selected' : ''}`;
-            cardEl.innerHTML = `
-                <div class="card-corner">${card.rank}<br>${card.suit}</div>
-                <div class="card-center-suit">${card.suit}</div>
-            `;
-            cardEl.onclick = () => toggleSelectCard(index);
-            handEl.appendChild(cardEl);
-        });
-    }
-
-    function toggleSelectCard(index) {
-        if (selectedIndices.includes(index)) {
-            selectedIndices = selectedIndices.filter(i => i !== index);
-        } else {
-            selectedIndices.push(index);
-        }
-        renderHand();
-    }
-
-    function updateUI() {
-        document.getElementById('p1-count').innerText = `${hands[1].length} lá`;
-        document.getElementById('p2-count').innerText = `${hands[2].length} lá`;
-        document.getElementById('p3-count').innerText = `${hands[3].length} lá`;
-    }
-
-    function playSelectedCards() {
-        if (selectedIndices.length === 0) return;
-        selectedIndices.sort((a, b) => b - a);
-        const playedCards = [];
-        selectedIndices.forEach(i => {
-            playedCards.push(hands[0].splice(i, 1)[0]);
-        });
-        selectedIndices = [];
-        renderCenterCards(playedCards);
-        renderHand();
-        updateUI();
-
-        if (hands[0].length === 0) {
-            // Bạn Thắng
-            money[0] += currentBet * 3;
-            money[1] -= currentBet;
-            money[2] -= currentBet;
-            money[3] -= currentBet;
-            updateMoneyUI();
-            alert(`🎉 Chúc mừng! Bạn thắng ván cược +${formatMoney(currentBet * 3)} Polime!`);
-            document.getElementById('bet-modal').style.display = 'flex';
-        }
-    }
-
-    function passTurn() {
-        document.getElementById('status-msg').innerText = "Bạn đã bỏ lượt!";
-    }
-
-    function renderCenterCards(cards) {
-        const centerEl = document.getElementById('center-cards');
-        centerEl.innerHTML = '';
-        cards.forEach(card => {
-            const isRed = card.suit === '♦' || card.suit === '♥';
-            const cardEl = document.createElement('div');
-            cardEl.className = `card ${isRed ? 'red' : 'black'}`;
-            cardEl.innerHTML = `
-                <div class="card-corner">${card.rank}<br>${card.suit}</div>
-                <div class="card-center-suit">${card.suit}</div>
-            `;
-            centerEl.appendChild(cardEl);
-        });
-    }
-
-    // Khởi tạo
-    loadSavedMoney();
-</script>
-</body>
-</html>
