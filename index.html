@@ -144,13 +144,13 @@
         .last-played-container {
             display: flex;
             justify-content: center;
-            gap: -20px;
+            gap: 4px;
         }
 
-        /* Lá Bài */
+        /* Lá Bài & Hiệu Ứng Animation */
         .card {
-            width: 56px;
-            height: 82px;
+            width: 54px;
+            height: 80px;
             background-color: #fff;
             border-radius: 6px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.4);
@@ -162,7 +162,7 @@
             font-size: 13px;
             position: relative;
             cursor: pointer;
-            transition: transform 0.15s ease, margin 0.15s ease;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), margin 0.15s ease;
             color: #000;
         }
 
@@ -179,9 +179,25 @@
         .card.black { color: #2c3e50; }
 
         .card.selected {
-            transform: translateY(-16px) !important;
-            box-shadow: 0 8px 12px rgba(0,0,0,0.5);
-            border: 2px solid #3498db;
+            transform: translateY(-18px) scale(1.05) !important;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.5);
+            border: 2px solid #f1c40f;
+        }
+
+        /* Animation Bài Đánh Ra Bàn */
+        .card.play-anim {
+            animation: playCard 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes playCard {
+            0% {
+                opacity: 0;
+                transform: scale(1.4) translateY(-30px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .card-corner {
@@ -273,6 +289,7 @@
             text-align: center;
             min-height: 18px;
             font-weight: bold;
+            transition: color 0.2s;
         }
 
         /* Modal Chọn cược */
@@ -434,3 +451,341 @@
     const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
     
     let money = [100000, 100000, 100000, 100000];
+    let currentBet = 10000;
+    let deck = [];
+    let hands = [[], [], [], []];
+    let selectedIndices = [];
+    let currentTurn = 0;
+    let lastPlay = null;
+    let passedPlayers = [false, false, false, false];
+    let isGameOver = false;
+
+    function loadSavedMoney() {
+        const saved = localStorage.getItem('game_money');
+        if (saved) money = JSON.parse(saved);
+        updateMoneyUI();
+    }
+
+    function formatMoney(amount) {
+        if (amount >= 1000000) return (amount / 1000000).toFixed(1) + 'M';
+        if (amount >= 1000) return (amount / 1000) + 'k';
+        return amount.toString();
+    }
+
+    function updateMoneyUI() {
+        for (let i = 0; i < 4; i++) {
+            document.getElementById(`p${i}-money`).innerText = formatMoney(money[i]);
+        }
+        localStorage.setItem('game_money', JSON.stringify(money));
+    }
+
+    function add100k() {
+        money[0] += 100000;
+        updateMoneyUI();
+        const toast = document.getElementById('donate-toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function selectBet(bet) {
+        if (money[0] < bet) {
+            alert("Bạn không đủ tiền cược! Bấm Donate để nhận thêm tiền nhé.");
+            return;
+        }
+        currentBet = bet;
+        document.getElementById('current-bet-display').innerText = formatMoney(bet);
+        document.getElementById('bet-modal').style.display = 'none';
+        initGame();
+    }
+
+    function createDeck() {
+        deck = [];
+        for (let r = 0; r < RANKS.length; r++) {
+            for (let s = 0; s < SUITS.length; s++) {
+                deck.push({ rank: RANKS[r], suit: SUITS[s], rankIdx: r, suitIdx: s, val: r * 4 + s });
+            }
+        }
+    }
+
+    function shuffleDeck() {
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
+    }
+
+    function initGame() {
+        createDeck();
+        shuffleDeck();
+        hands = [[], [], [], []];
+        passedPlayers = [false, false, false, false];
+        lastPlay = null;
+        isGameOver = false;
+
+        for (let i = 0; i < 52; i++) {
+            hands[i % 4].push(deck[i]);
+        }
+
+        for (let i = 0; i < 4; i++) {
+            hands[i].sort((a, b) => a.val - b.val);
+        }
+
+        currentTurn = 0;
+        for (let i = 0; i < 4; i++) {
+            if (hands[i].some(c => c.val === 0)) {
+                currentTurn = i;
+                break;
+            }
+        }
+
+        selectedIndices = [];
+        renderHand();
+        updateUI();
+        renderCenterCards([], false);
+        highlightActivePlayer();
+
+        if (currentTurn !== 0) {
+            setTimeout(botTurn, 1000);
+        } else {
+            document.getElementById('status-msg').innerText = "Ván mới - Đến lượt bạn đánh!";
+        }
+    }
+
+    function highlightActivePlayer() {
+        for (let i = 0; i < 4; i++) {
+            const el = document.getElementById(`p${i}-info`);
+            if (el) {
+                if (i === currentTurn) el.classList.add('active');
+                else el.classList.remove('active');
+            }
+        }
+    }
+
+    function sortHand() {
+        hands[0].sort((a, b) => a.val - b.val);
+        selectedIndices = [];
+        renderHand();
+    }
+
+    function renderHand() {
+        const handEl = document.getElementById('user-hand');
+        handEl.innerHTML = '';
+        hands[0].forEach((card, index) => {
+            const cardEl = document.createElement('div');
+            const isRed = card.suit === '♦' || card.suit === '♥';
+            cardEl.className = `card ${isRed ? 'red' : 'black'} ${selectedIndices.includes(index) ? 'selected' : ''}`;
+            cardEl.innerHTML = `
+                <div class="card-corner">${card.rank}<br>${card.suit}</div>
+                <div class="card-center-suit">${card.suit}</div>
+            `;
+            cardEl.onclick = () => {
+                if (currentTurn === 0) toggleSelectCard(index);
+            };
+            handEl.appendChild(cardEl);
+        });
+    }
+
+    function toggleSelectCard(index) {
+        if (selectedIndices.includes(index)) {
+            selectedIndices = selectedIndices.filter(i => i !== index);
+        } else {
+            selectedIndices.push(index);
+        }
+        renderHand();
+    }
+
+    function updateUI() {
+        document.getElementById('p1-count').innerText = `${hands[1].length} lá`;
+        document.getElementById('p2-count').innerText = `${hands[2].length} lá`;
+        document.getElementById('p3-count').innerText = `${hands[3].length} lá`;
+    }
+
+    function getCardCombo(cards) {
+        if (!cards || cards.length === 0) return null;
+        const sorted = [...cards].sort((a,b) => a.val - b.val);
+        const len = sorted.length;
+
+        if (len === 1) return { type: 'SINGLE', maxVal: sorted[0].val, len: 1 };
+        if (len === 2 && sorted[0].rankIdx === sorted[1].rankIdx) return { type: 'PAIR', maxVal: sorted[1].val, len: 2 };
+        if (len === 3 && sorted[0].rankIdx === sorted[1].rankIdx && sorted[1].rankIdx === sorted[2].rankIdx) return { type: 'TRIPLE', maxVal: sorted[2].val, len: 3 };
+
+        if (len >= 3) {
+            let isStraight = true;
+            for (let i = 0; i < len - 1; i++) {
+                if (sorted[i].rankIdx === 12 || sorted[i+1].rankIdx - sorted[i].rankIdx !== 1) {
+                    isStraight = false;
+                    break;
+                }
+            }
+            if (isStraight) return { type: 'STRAIGHT', maxVal: sorted[len - 1].val, len: len };
+        }
+
+        return null;
+    }
+
+    function isValidBeat(newCards, oldCards) {
+        const newCombo = getCardCombo(newCards);
+        const oldCombo = getCardCombo(oldCards);
+        
+        if (!newCombo) return false;
+        if (!oldCombo) return true;
+
+        if (newCombo.type === oldCombo.type && newCombo.len === oldCombo.len) {
+            return newCombo.maxVal > oldCombo.maxVal;
+        }
+        return false;
+    }
+
+    function playSelectedCards() {
+        if (currentTurn !== 0 || isGameOver) return;
+        if (selectedIndices.length === 0) return;
+
+        selectedIndices.sort((a, b) => a - b);
+        const playedCards = selectedIndices.map(i => hands[0][i]);
+
+        if (lastPlay && lastPlay.player !== 0 && !isValidBeat(playedCards, lastPlay.cards)) {
+            alert("Bài đánh ra không hợp lệ hoặc nhỏ hơn bài trên bàn!");
+            return;
+        }
+
+        if (!lastPlay && !getCardCombo(playedCards)) {
+            alert("Bộ bài không hợp lệ!");
+            return;
+        }
+
+        selectedIndices.sort((a, b) => b - a);
+        selectedIndices.forEach(i => hands[0].splice(i, 1));
+        
+        lastPlay = { player: 0, cards: playedCards };
+        selectedIndices = [];
+        renderCenterCards(playedCards, true); // Bật animation bài đánh
+        renderHand();
+        updateUI();
+
+        if (checkWin(0)) return;
+        nextTurn();
+    }
+
+    function passTurn() {
+        if (currentTurn !== 0 || isGameOver) return;
+        if (!lastPlay || lastPlay.player === 0) {
+            alert("Bạn đang giữ vòng, không thể bỏ lượt!");
+            return;
+        }
+        passedPlayers[0] = true;
+        document.getElementById('status-msg').innerText = "Bạn đã bỏ lượt!";
+        nextTurn();
+    }
+
+    function nextTurn() {
+        let activeCount = passedPlayers.filter(p => !p).length;
+        if (activeCount <= 1 && lastPlay) {
+            passedPlayers = [false, false, false, false];
+            currentTurn = lastPlay.player;
+            lastPlay = null;
+            document.getElementById('status-msg').innerText = `Vòng mới! ${getRoleName(currentTurn)} giữ quyền đánh.`;
+        } else {
+            do {
+                currentTurn = (currentTurn + 1) % 4;
+            } while (passedPlayers[currentTurn]);
+        }
+
+        highlightActivePlayer();
+
+        if (currentTurn !== 0 && !isGameOver) {
+            setTimeout(botTurn, 1000);
+        } else if (currentTurn === 0) {
+            document.getElementById('status-msg').innerText = "Đến lượt bạn!";
+        }
+    }
+
+    function botTurn() {
+        if (isGameOver) return;
+
+        let botHand = hands[currentTurn];
+        let cardsToPlay = null;
+
+        if (!lastPlay || lastPlay.player === currentTurn) {
+            cardsToPlay = [botHand[0]];
+        } else {
+            const targetCombo = getCardCombo(lastPlay.cards);
+            if (targetCombo) {
+                if (targetCombo.type === 'SINGLE') {
+                    for (let card of botHand) {
+                        if (card.val > targetCombo.maxVal) {
+                            cardsToPlay = [card];
+                            break;
+                        }
+                    }
+                } else if (targetCombo.type === 'PAIR') {
+                    for (let i = 0; i < botHand.length - 1; i++) {
+                        if (botHand[i].rankIdx === botHand[i+1].rankIdx) {
+                            if (botHand[i+1].val > targetCombo.maxVal) {
+                                cardsToPlay = [botHand[i], botHand[i+1]];
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (cardsToPlay) {
+            hands[currentTurn] = botHand.filter(c => !cardsToPlay.includes(c));
+            lastPlay = { player: currentTurn, cards: cardsToPlay };
+            renderCenterCards(cardsToPlay, true); // Bật animation bài đánh
+            updateUI();
+            document.getElementById('status-msg').innerText = `${getRoleName(currentTurn)} đã đánh!`;
+
+            if (checkWin(currentTurn)) return;
+            nextTurn();
+        } else {
+            passedPlayers[currentTurn] = true;
+            document.getElementById('status-msg').innerText = `${getRoleName(currentTurn)} Bỏ lượt!`;
+            nextTurn();
+        }
+    }
+
+    function checkWin(playerIdx) {
+        if (hands[playerIdx].length === 0) {
+            isGameOver = true;
+            if (playerIdx === 0) {
+                money[0] += currentBet * 3;
+                for (let i = 1; i < 4; i++) money[i] -= currentBet;
+                alert(`🎉 CHÚC MỪNG BẠN THẮNG VÁN CƯỢC +${formatMoney(currentBet * 3)} POLIME!`);
+            } else {
+                money[playerIdx] += currentBet * 3;
+                money[0] -= currentBet;
+                alert(`😭 ${getRoleName(playerIdx)} đã tới nhất! Bạn mất -${formatMoney(currentBet)} Polime.`);
+            }
+            updateMoneyUI();
+            document.getElementById('bet-modal').style.display = 'flex';
+            return true;
+        }
+        return false;
+    }
+
+    function getRoleName(idx) {
+        return ['Bạn', 'Bot Trái', 'Bot Giữa', 'Bot Phải'][idx];
+    }
+
+    /* Hàm render bài ra giữa bàn kèm hiệu ứng Animation */
+    function renderCenterCards(cards, animate = false) {
+        const centerEl = document.getElementById('center-cards');
+        centerEl.innerHTML = '';
+        cards.forEach(card => {
+            const isRed = card.suit === '♦' || card.suit === '♥';
+            const cardEl = document.createElement('div');
+            cardEl.className = `card ${isRed ? 'red' : 'black'} ${animate ? 'play-anim' : ''}`;
+            cardEl.innerHTML = `
+                <div class="card-corner">${card.rank}<br>${card.suit}</div>
+                <div class="card-center-suit">${card.suit}</div>
+            `;
+            centerEl.appendChild(cardEl);
+        });
+    }
+
+    loadSavedMoney();
+</script>
+</body>
+</html>
