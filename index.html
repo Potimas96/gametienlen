@@ -184,7 +184,6 @@
             border: 2px solid #f1c40f;
         }
 
-        /* Animation Bài Đánh Ra Bàn */
         .card.play-anim {
             animation: playCard 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
@@ -699,13 +698,12 @@
         }
     }
 
-    // AI BOT TRÍ TUỆ NHÂN TẠO NÂNG CẤP (BIẾT ĐÁNH SẢNH, SÁM, ĐÔI, ĐƠN)
+    // AI BOT TRÍ TUỆ NHÂN TẠO ĐÁNH THÔNG MINH - BIẾT ĐÈ RÁC & ĐÁNH BỘ
     function botFindAllCombos(botHand) {
         let pairs = [];
         let triples = [];
         let straights = [];
 
-        // Tìm Đôi & Sám
         let rankGroups = {};
         botHand.forEach(c => {
             if (!rankGroups[c.rankIdx]) rankGroups[c.rankIdx] = [];
@@ -717,7 +715,6 @@
             if (rankGroups[r].length >= 3) triples.push(rankGroups[r].slice(0, 3));
         }
 
-        // Tìm Sảnh (từ độ dài lớn nhất đến nhỏ nhất, loại trừ lá 2)
         let nonTwos = botHand.filter(c => c.rankIdx < 12);
         let uniqueRanks = [...new Set(nonTwos.map(c => c.rankIdx))].sort((a,b) => a - b);
         
@@ -746,26 +743,25 @@
         let { pairs, triples, straights } = botFindAllCombos(botHand);
 
         if (!lastPlay || lastPlay.player === currentTurn) {
-            // Đánh bài tự do: Ưu tiên xả Sảnh -> Sám -> Đôi -> Đơn lẻ
+            // Giữ vòng: Ưu tiên xả Sảnh -> Sám -> Đôi -> Đơn
             if (straights.length > 0) {
-                cardsToPlay = straights[0]; // Đánh sảnh dài nhất
+                cardsToPlay = straights[0];
             } else if (triples.length > 0) {
                 cardsToPlay = triples[0];
             } else if (pairs.length > 0) {
                 cardsToPlay = pairs[0];
             } else {
-                cardsToPlay = [botHand[0]]; // Đánh lá nhỏ nhất
+                cardsToPlay = [botHand[0]];
             }
         } else {
-            // Chặn bài đối thủ
+            // Chặn bài
             const targetCombo = getCardCombo(lastPlay.cards);
             if (targetCombo) {
                 if (targetCombo.type === 'SINGLE') {
-                    for (let card of botHand) {
-                        if (card.val > targetCombo.maxVal) {
-                            cardsToPlay = [card];
-                            break;
-                        }
+                    // Ưu tiên chọn lá lẻ trước, nếu không có lá lẻ lớn hơn sẽ xé Đôi/Sám ra đè luôn!
+                    let validCards = botHand.filter(c => c.val > targetCombo.maxVal);
+                    if (validCards.length > 0) {
+                        cardsToPlay = [validCards[0]]; // Lấy lá nhỏ nhất có thể đè
                     }
                 } else if (targetCombo.type === 'PAIR') {
                     for (let p of pairs) {
