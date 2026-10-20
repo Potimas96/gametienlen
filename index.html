@@ -2,1415 +2,600 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tiến Lên Miền Nam - Offline Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tiến Lên Miền Nam - Polime Edition</title>
     <style>
-        /* Modern reset & Variables */
         * {
             box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
             margin: 0;
             padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: #0d2818;
-            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0d3b1e;
+            color: #fff;
             height: 100vh;
-            overflow: hidden;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
-        /* Felt Table Background */
+        /* Bàn chơi */
         .table {
             flex: 1;
-            background: radial-gradient(circle, #1a4d2e 0%, #0d2818 85%, #05100a 100%);
             position: relative;
-            display: grid;
-            grid-template-rows: 100px 1fr 200px;
-            grid-template-columns: 140px 1fr 140px;
-            padding: 10px;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
-        }
-
-        /* Border felt rim */
-        .table::before {
-            content: '';
-            position: absolute;
-            top: 5px; left: 5px; right: 5px; bottom: 5px;
-            border: 2px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            pointer-events: none;
-        }
-
-        /* Player Areas */
-        .player-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            z-index: 5;
-        }
-
-        .player-top { grid-row: 1; grid-column: 2; }
-        .player-left { grid-row: 2; grid-column: 1; }
-        .player-right { grid-row: 2; grid-column: 3; }
-        .player-bottom { grid-row: 3; grid-column: 2; justify-content: flex-end; }
-
-        /* Avatar & Stats */
-        .avatar-box {
-            background: rgba(0, 0, 0, 0.65);
-            border: 2px solid #3d7a52;
-            border-radius: 12px;
-            padding: 8px 12px;
-            text-align: center;
-            min-width: 110px;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            transition: all 0.3s ease;
-        }
-
-        .avatar-box.active {
-            border-color: #ffd700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-            background: rgba(20, 50, 30, 0.85);
-            transform: scale(1.05);
-        }
-
-        .avatar-box.passed {
-            opacity: 0.5;
-            border-color: #555;
-        }
-
-        .avatar-name {
-            font-weight: bold;
-            font-size: 14px;
-            color: #e0e0e0;
-        }
-
-        .avatar-box.active .avatar-name {
-            color: #ffd700;
-        }
-
-        .card-count {
-            font-size: 12px;
-            color: #a0c0a0;
-            margin-top: 2px;
-        }
-
-        .rank-badge {
-            font-size: 11px;
-            font-weight: bold;
-            color: #fff;
-            background: #d32f2f;
-            padding: 2px 6px;
-            border-radius: 8px;
-            margin-top: 4px;
-            display: inline-block;
-        }
-
-        /* Played Cards Center Area */
-        .center-area {
-            grid-row: 2;
-            grid-column: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .played-cards-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 110px;
-            padding: 10px;
-            background: rgba(0,0,0,0.15);
-            border-radius: 15px;
-            border: 1px dashed rgba(255,255,255,0.1);
-            position: relative;
-        }
-
-        .last-action-msg {
-            margin-top: 8px;
-            font-size: 13px;
-            color: #ffd700;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-            min-height: 18px;
-        }
-
-        /* Card Graphics Component */
-        .card {
-            width: 70px;
-            height: 100px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            background: radial-gradient(circle, #1a5e32 0%, #0d3b1e 80%);
+            border: 8px solid #3a2212;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.6);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 4px 6px;
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-            font-family: Arial, sans-serif;
-            border: 1px solid #ccc;
+            padding: 10px;
         }
 
-        .card.red { color: #d32f2f; }
-        .card.black { color: #212121; }
+        /* Vùng hiển thị Bot */
+        .opponents-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 2;
+        }
 
-        .card-corner {
+        .player-info {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            text-align: center;
+            min-width: 90px;
+            font-size: 11px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .player-info.active {
+            border-color: #f1c40f;
+            box-shadow: 0 0 12px #f1c40f;
+            background: rgba(241, 196, 15, 0.25);
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: #f1c40f;
+            margin-bottom: 2px;
+        }
+
+        /* Tờ tiền Polime Badge */
+        .money-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: #000;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-top: 3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .polymer-icon {
+            width: 16px;
+            height: 10px;
+            background: #20b2aa;
+            border: 1px solid #fff;
+            border-radius: 2px;
+            display: inline-block;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        .polymer-icon::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.8);
+            top: 2px;
+            left: 2px;
+        }
+
+        .card-count {
+            font-size: 10px;
+            color: #ccc;
+            margin-top: 2px;
+        }
+
+        /* Khu vực bài vừa đánh */
+        .center-area {
+            position: absolute;
+            top: 42%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            line-height: 1;
-        }
-
-        .card-corner.top-left { align-self: flex-start; }
-        .card-corner.bottom-right { align-self: flex-end; transform: rotate(180deg); }
-
-        .card-val {
-            font-size: 15px;
-            font-weight: bold;
-        }
-
-        .card-suit {
-            font-size: 14px;
-            margin-top: 1px;
-        }
-
-        .card-center-suit {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 32px;
-            opacity: 0.9;
-        }
-
-        /* Card States & Fan/Overlap */
-        .card.selected {
-            transform: translateY(-18px) !important;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.5), 0 0 10px #ffd700;
-            border-color: #ffd700;
-        }
-
-        .card-back {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            border: 2px solid #ffffff;
-        }
-
-        .card-back-pattern {
-            width: 100%;
-            height: 100%;
-            border: 1px dashed rgba(255,255,255,0.4);
-            border-radius: 4px;
-        }
-
-        /* Hand Containers */
-        .hand {
-            display: flex;
             justify-content: center;
-            align-items: center;
-            position: relative;
-            margin-top: 10px;
+            min-height: 100px;
+            width: 90%;
+            z-index: 1;
         }
 
-        .hand .card {
-            margin-left: -38px;
-        }
-        .hand .card:first-child {
-            margin-left: 0;
-        }
-
-        .hand .card:hover {
-            transform: translateY(-8px);
-            z-index: 100 !important;
-        }
-
-        /* Bot Cards Placeholder Display */
-        .bot-cards-fan {
-            display: flex;
-            margin-top: 6px;
-        }
-        .bot-cards-fan .card-back {
-            width: 24px;
-            height: 36px;
-            margin-left: -16px;
-            border-radius: 4px;
-        }
-        .bot-cards-fan .card-back:first-child { margin-left: 0; }
-
-        /* Controls Panel */
-        .controls-bar {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            align-items: center;
+        .bet-info-board {
+            background: rgba(0,0,0,0.6);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #f1c40f;
             margin-bottom: 8px;
-            z-index: 10;
-        }
-
-        .btn {
-            background: linear-gradient(180deg, #4caf50 0%, #2e7d32 100%);
-            color: white;
-            border: 1px solid #81c784;
-            padding: 10px 20px;
-            font-size: 15px;
-            font-weight: bold;
-            border-radius: 20px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: all 0.15s ease;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            border: 1px solid rgba(241,196,15,0.4);
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-            filter: brightness(1.1);
-        }
-
-        .btn:active:not(:disabled) {
-            transform: translateY(1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .btn:disabled {
-            background: #4a5568;
-            border-color: #718096;
-            color: #a0aec0;
-            cursor: not-allowed;
-            box-shadow: none;
-            opacity: 0.6;
-        }
-
-        .btn-pass {
-            background: linear-gradient(180deg, #f44336 0%, #c62828 100%);
-            border-color: #ef9a9a;
-        }
-
-        .btn-sort {
-            background: linear-gradient(180deg, #2196f3 0%, #1565c0 100%);
-            border-color: #90caf9;
-        }
-
-        .btn-restart {
-            background: linear-gradient(180deg, #ff9800 0%, #e65100 100%);
-            border-color: #ffe082;
-        }
-
-        /* Game Logs Header Panel */
-        .top-header {
-            background: rgba(0,0,0,0.5);
-            padding: 8px 16px;
+        .last-played-container {
             display: flex;
+            justify-content: center;
+        }
+
+        /* Lá Bài */
+        .card {
+            width: 56px;
+            height: 82px;
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
             justify-content: space-between;
+            padding: 4px;
+            font-weight: bold;
+            font-size: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.15s ease, margin 0.15s ease;
+            color: #000;
+        }
+
+        @media (min-width: 768px) {
+            .card {
+                width: 75px;
+                height: 108px;
+                font-size: 18px;
+                padding: 6px;
+            }
+        }
+
+        .card.red { color: #e74c3c; }
+        .card.black { color: #2c3e50; }
+
+        .card.selected {
+            transform: translateY(-16px) !important;
+            box-shadow: 0 8px 12px rgba(0,0,0,0.5);
+            border: 2px solid #3498db;
+        }
+
+        .card-corner {
+            line-height: 1;
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            font-size: 14px;
         }
 
-        .game-status-text {
-            color: #ffd700;
-            font-weight: 500;
+        .card-center-suit {
+            font-size: 18px;
+            align-self: center;
         }
 
-        /* Modal / Game Over Overlay */
+        /* Vùng Người chơi */
+        .user-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            z-index: 3;
+            width: 100%;
+        }
+
+        .hand {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            padding: 6px 0;
+        }
+
+        .hand .card {
+            margin-left: -28px;
+        }
+
+        @media (min-width: 768px) {
+            .hand .card {
+                margin-left: -35px;
+            }
+        }
+
+        .hand .card:first-child {
+            margin-left: 0;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            justify-content: center;
+            padding: 0 10px;
+        }
+
+        .btn {
+            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+            min-width: 80px;
+        }
+
+        .btn:active { transform: scale(0.95); }
+        .btn-pass { background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%); }
+        .btn-sort { background: linear-gradient(180deg, #3498db 0%, #2980b9 100%); }
+        .btn-donate {
+            background: linear-gradient(135deg, #f1c40f, #e67e22);
+            color: #000;
+            font-weight: bold;
+            border: 1px solid #fff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .status-msg {
+            font-size: 12px;
+            color: #f39c12;
+            text-align: center;
+            min-height: 16px;
+            font-weight: bold;
+        }
+
+        /* Modal Chọn cược & Kết quả */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+            z-index: 100;
         }
 
-        .modal-overlay.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal-content {
-            background: #1e293b;
-            border: 2px solid #38bdf8;
+        .modal {
+            background: #1e272e;
+            padding: 20px;
             border-radius: 16px;
-            padding: 24px 32px;
-            max-width: 400px;
-            width: 90%;
+            width: 85%;
+            max-width: 360px;
             text-align: center;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            border: 2px solid #f1c40f;
+            box-shadow: 0 0 20px rgba(241,196,15,0.4);
         }
 
-        .modal-title {
-            font-size: 24px;
-            color: #ffd700;
-            margin-bottom: 16px;
-        }
-
-        .rankings-list {
-            list-style: none;
-            margin: 16px 0;
-            text-align: left;
-        }
-
-        .rankings-list li {
-            padding: 8px 12px;
-            margin-bottom: 6px;
-            background: #334155;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        /* Sound toggle button */
-        .sound-toggle {
-            background: transparent;
-            border: none;
-            color: #fff;
-            cursor: pointer;
+        .modal h2 {
+            color: #f1c40f;
+            margin-bottom: 12px;
             font-size: 18px;
         }
 
-        /* Responsive Layout Adjustments */
-        @media (max-width: 768px) {
-            .table {
-                grid-template-rows: 80px 1fr 160px;
-                grid-template-columns: 80px 1fr 80px;
-                padding: 4px;
-            }
-            .card {
-                width: 52px;
-                height: 76px;
-                padding: 2px 4px;
-            }
-            .card-val { font-size: 12px; }
-            .card-suit { font-size: 11px; }
-            .card-center-suit { font-size: 22px; }
-            .hand .card { margin-left: -28px; }
-            .avatar-box { min-width: 75px; padding: 4px 6px; }
-            .avatar-name { font-size: 11px; }
-            .btn { padding: 8px 14px; font-size: 12px; }
+        .bet-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .btn-bet {
+            background: linear-gradient(135deg, #0984e3, #6c5ce7);
+            border: none;
+            color: white;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-bet:active { transform: scale(0.95); }
+
+        /* Popup Donate Thông báo */
+        .donate-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 2px solid #fff;
+            z-index: 200;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .donate-toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
         }
     </style>
 </head>
 <body>
 
-    <!-- Header status bar -->
-    <div class="top-header">
-        <div><strong>Tiến Lên Miền Nam</strong> (Offline)</div>
-        <div id="status-msg" class="game-status-text">Đang chuẩn bị ván đấu...</div>
-        <div>
-            <button id="sound-btn" class="sound-toggle" title="Bật/Tắt âm thanh">🔊</button>
+<!-- Toast Thông Báo Donate -->
+<div class="donate-toast" id="donate-toast">
+    <span class="polymer-icon"></span>
+    <span id="donate-text">ông bô đã donate cho bà bô 100k</span>
+</div>
+
+<div class="table">
+    <!-- Đối thủ -->
+    <div class="opponents-row">
+        <div class="player-info" id="p1-info">
+            <div class="player-name">Bot Trái</div>
+            <div class="money-badge"><span class="polymer-icon"></span><span id="p1-money">100k</span></div>
+            <div class="card-count" id="p1-count">13 lá</div>
+        </div>
+        <div class="player-info" id="p2-info">
+            <div class="player-name">Bot Giữa</div>
+            <div class="money-badge"><span class="polymer-icon"></span><span id="p2-money">100k</span></div>
+            <div class="card-count" id="p2-count">13 lá</div>
+        </div>
+        <div class="player-info" id="p3-info">
+            <div class="player-name">Bot Phải</div>
+            <div class="money-badge"><span class="polymer-icon"></span><span id="p3-money">100k</span></div>
+            <div class="card-count" id="p3-count">13 lá</div>
         </div>
     </div>
 
-    <!-- Main Game Board Table -->
-    <div class="table">
-
-        <!-- Top AI Player (Player 2) -->
-        <div class="player-area player-top">
-            <div id="p2-box" class="avatar-box">
-                <div class="avatar-name">🤖 Bot Bắc</div>
-                <div id="p2-count" class="card-count">13 lá</div>
-                <div id="p2-badge"></div>
-            </div>
-            <div id="p2-cards" class="bot-cards-fan"></div>
+    <!-- Giữa bàn -->
+    <div class="center-area">
+        <div class="bet-info-board">
+            <span>Mức Cược:</span>
+            <span class="polymer-icon"></span>
+            <strong id="current-bet-display">10k</strong>
         </div>
-
-        <!-- Left AI Player (Player 1) -->
-        <div class="player-area player-left">
-            <div id="p1-box" class="avatar-box">
-                <div class="avatar-name">🤖 Bot Tây</div>
-                <div id="p1-count" class="card-count">13 lá</div>
-                <div id="p1-badge"></div>
-            </div>
-            <div id="p1-cards" class="bot-cards-fan"></div>
-        </div>
-
-        <!-- Right AI Player (Player 3) -->
-        <div class="player-area player-right">
-            <div id="p3-box" class="avatar-box">
-                <div class="avatar-name">🤖 Bot Đông</div>
-                <div id="p3-count" class="card-count">13 lá</div>
-                <div id="p3-badge"></div>
-            </div>
-            <div id="p3-cards" class="bot-cards-fan"></div>
-        </div>
-
-        <!-- Played Cards Center Zone -->
-        <div class="center-area">
-            <div id="played-cards" class="played-cards-container">
-                <!-- Played cards rendered here dynamically -->
-            </div>
-            <div id="last-action" class="last-action-msg">Ván đấu mới bắt đầu</div>
-        </div>
-
-        <!-- Human Player (Player 0) -->
-        <div class="player-area player-bottom">
-            <div id="p0-box" class="avatar-box">
-                <div class="avatar-name">👤 Bạn</div>
-                <div id="p0-count" class="card-count">13 lá</div>
-                <div id="p0-badge"></div>
-            </div>
-
-            <!-- Player's Hand -->
-            <div id="player-hand" class="hand"></div>
-        </div>
-
+        <div class="last-played-container" id="center-cards"></div>
     </div>
 
-    <!-- Action Bar -->
-    <div class="controls-bar">
-        <button id="btn-play" class="btn">⚔️ Đánh</button>
-        <button id="btn-pass" class="btn btn-pass">🛡️ Bỏ lượt</button>
-        <button id="btn-sort" class="btn btn-sort">🔄 Xếp bài</button>
-        <button id="btn-restart" class="btn btn-restart">🎲 Ván mới</button>
-    </div>
+    <!-- Người chơi -->
+    <div class="user-area">
+        <div class="player-info" style="min-width: 160px; margin-bottom: 4px;">
+            <div class="player-name" style="color: #2ecc71;">Bạn (Chủ bàn)</div>
+            <div class="money-badge"><span class="polymer-icon"></span><span id="p0-money">100k</span></div>
+        </div>
 
-    <!-- End Game Modal -->
-    <div id="game-over-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h2 class="modal-title">Kết Quả Ván Đấu</h2>
-            <ul id="rankings-list" class="rankings-list"></ul>
-            <button id="btn-modal-restart" class="btn btn-restart" style="margin: 0 auto;">Chơi Ván Tiếp</button>
+        <div class="status-msg" id="status-msg">Chọn mức cược để bắt đầu!</div>
+        <div class="hand" id="user-hand"></div>
+
+        <div class="controls">
+            <button class="btn btn-sort" onclick="sortHand()">Xếp Bài</button>
+            <button class="btn btn-pass" id="btn-pass" onclick="passTurn()">Bỏ Lượt</button>
+            <button class="btn" id="btn-play" onclick="playSelectedCards()">Đánh Bài</button>
+            <button class="btn btn-donate" onclick="add100k()">+100k Donate</button>
         </div>
     </div>
+</div>
 
-    <script>
-        /**
-         * TIẾN LÊN MIỀN NAM - SINGLE FILE FULL ENGINE & INTERFACE
-         */
+<!-- Modal Chọn Mức Cược -->
+<div class="modal-overlay" id="bet-modal">
+    <div class="modal">
+        <h2>Chủ Bàn Chọn Cược</h2>
+        <p style="font-size: 13px; color: #ccc;">Chọn mức cược Polime cho ván đấu:</p>
+        <div class="bet-options">
+            <button class="btn-bet" onclick="selectBet(10000)"><span class="polymer-icon"></span> 10k</button>
+            <button class="btn-bet" onclick="selectBet(20000)"><span class="polymer-icon"></span> 20k</button>
+            <button class="btn-bet" onclick="selectBet(50000)"><span class="polymer-icon"></span> 50k</button>
+            <button class="btn-bet" onclick="selectBet(100000)"><span class="polymer-icon"></span> 100k</button>
+            <button class="btn-bet" style="grid-column: span 2;" onclick="selectBet(500000)"><span class="polymer-icon"></span> 500k</button>
+        </div>
+        <button class="btn btn-donate" style="width: 100%; margin-top: 5px; padding: 10px;" onclick="add100k()">🎁 Xin Ông Bô Donate 100k</button>
+    </div>
+</div>
 
-        // --- Sound Engine using Web Audio API (100% Offline & Native) ---
-        class SoundEngine {
-            constructor() {
-                this.ctx = null;
-                this.enabled = true;
-            }
+<script>
+    const SUITS = ['♠', '♣', '♦', '♥'];
+    const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
+    
+    // Quản lý tiền tệ
+    let money = [100000, 100000, 100000, 100000];
+    let currentBet = 10000;
 
-            init() {
-                if (!this.ctx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    if (AudioContext) this.ctx = new AudioContext();
-                }
-            }
+    function loadSavedMoney() {
+        const saved = localStorage.getItem('game_money');
+        if (saved) {
+            money = JSON.parse(saved);
+        }
+        updateMoneyUI();
+    }
 
-            playCardSound() {
-                if (!this.enabled) return;
-                this.init();
-                if (!this.ctx) return;
+    function formatMoney(amount) {
+        if (amount >= 1000000) return (amount / 1000000).toFixed(1) + 'M';
+        if (amount >= 1000) return (amount / 1000) + 'k';
+        return amount.toString();
+    }
 
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.08);
+    function updateMoneyUI() {
+        for (let i = 0; i < 4; i++) {
+            document.getElementById(`p${i}-money`).innerText = formatMoney(money[i]);
+        }
+        localStorage.setItem('game_money', JSON.stringify(money));
+    }
 
-                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+    // Hàm Thêm Tiền + Hiện Thông Báo Donate
+    function add100k() {
+        money[0] += 100000;
+        updateMoneyUI();
+        
+        // Hiển thị Toast Donate
+        const toast = document.getElementById('donate-toast');
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2500);
+    }
 
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
+    function selectBet(bet) {
+        if (money[0] < bet) {
+            alert("Bạn không đủ tiền cược! Hãy bấm nút Donate để xin thêm tiền nhé.");
+            return;
+        }
+        currentBet = bet;
+        document.getElementById('current-bet-display').innerText = formatMoney(bet);
+        document.getElementById('bet-modal').style.display = 'none';
+        initGame();
+    }
 
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.08);
-            }
+    // Logic Game
+    let deck = [];
+    let hands = [[], [], [], []];
+    let selectedIndices = [];
 
-            playChopSound() {
-                if (!this.enabled) return;
-                this.init();
-                if (!this.ctx) return;
-
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(600, this.ctx.currentTime + 0.2);
-
-                gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.25);
-            }
-
-            playPassSound() {
-                if (!this.enabled) return;
-                this.init();
-                if (!this.ctx) return;
-
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(200, this.ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(120, this.ctx.currentTime + 0.1);
-
-                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.1);
-            }
-
-            playWinSound() {
-                if (!this.enabled) return;
-                this.init();
-                if (!this.ctx) return;
-
-                const notes = [261.63, 329.63, 392.00, 523.25];
-                notes.forEach((freq, idx) => {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.2, this.ctx.currentTime + idx * 0.1);
-                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + idx * 0.1 + 0.3);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start(this.ctx.currentTime + idx * 0.1);
-                    osc.stop(this.ctx.currentTime + idx * 0.1 + 0.3);
-                });
+    function createDeck() {
+        deck = [];
+        for (let r = 0; r < RANKS.length; r++) {
+            for (let s = 0; s < SUITS.length; s++) {
+                deck.push({ rank: RANKS[r], suit: SUITS[s], val: r * 4 + s });
             }
         }
+    }
 
-        const sound = new SoundEngine();
-
-        // --- Card & Combination Logic ---
-        const SUITS = [
-            { symbol: '♠', name: 'spade', color: 'black', rank: 0 },
-            { symbol: '♣', name: 'club', color: 'black', rank: 1 },
-            { symbol: '♦', name: 'diamond', color: 'red', rank: 2 },
-            { symbol: '♥', name: 'heart', color: 'red', rank: 3 }
-        ];
-
-        const RANKS = [
-            { name: '3', value: 3 }, { name: '4', value: 4 }, { name: '5', value: 5 },
-            { name: '6', value: 6 }, { name: '7', value: 7 }, { name: '8', value: 8 },
-            { name: '9', value: 9 }, { name: '10', value: 10 }, { name: 'J', value: 11 },
-            { name: 'Q', value: 12 }, { name: 'K', value: 13 }, { name: 'A', value: 14 },
-            { name: '2', value: 15 } // 2 (Heo) is highest rank
-        ];
-
-        class Card {
-            constructor(rankObj, suitObj) {
-                this.rankName = rankObj.name;
-                this.val = rankObj.value;
-                this.suit = suitObj.symbol;
-                this.suitRank = suitObj.rank;
-                this.color = suitObj.color;
-                // Unique power score calculation for straightforward comparison:
-                // Range from 3♠ (val 3 * 4 + 0 = 12) to 2♥ (val 15 * 4 + 3 = 63)
-                this.id = this.val * 4 + this.suitRank;
-            }
+    function shuffleDeck() {
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
         }
+    }
 
-        // Combination Types
-        const COMBO_TYPES = {
-            INVALID: 0,
-            SINGLE: 1,
-            PAIR: 2,            // Đôi
-            TRIPLE: 3,          // Sám cô
-            STRAIGHT: 4,        // Sảnh
-            FOUR_OF_A_KIND: 5,  // Tứ quý
-            THREE_PAIRS_CONT: 6,// 3 đôi thông
-            FOUR_PAIRS_CONT: 7  // 4 đôi thông
-        };
-
-        class CombinationAnalyzer {
-            static analyze(cards) {
-                if (!cards || cards.length === 0) return { type: COMBO_TYPES.INVALID };
-
-                // Sort cards by value then suit
-                const sorted = [...cards].sort((a, b) => a.id - b.id);
-                const len = sorted.length;
-
-                // 1. Single Card
-                if (len === 1) {
-                    return { type: COMBO_TYPES.SINGLE, highestCard: sorted[0] };
-                }
-
-                // 2. Pair
-                if (len === 2 && sorted[0].val === sorted[1].val) {
-                    return { type: COMBO_TYPES.PAIR, highestCard: sorted[1] };
-                }
-
-                // 3. Triple
-                if (len === 3 && sorted[0].val === sorted[1].val && sorted[1].val === sorted[2].val) {
-                    return { type: COMBO_TYPES.TRIPLE, highestCard: sorted[2] };
-                }
-
-                // 4. Four of a kind (Tứ quý)
-                if (len === 4 && sorted[0].val === sorted[3].val) {
-                    return { type: COMBO_TYPES.FOUR_OF_A_KIND, highestCard: sorted[3] };
-                }
-
-                // 5. Straight (Sảnh: 3+ continuous cards, cannot contain 2)
-                if (len >= 3) {
-                    let isStraight = true;
-                    for (let i = 0; i < len - 1; i++) {
-                        if (sorted[i].val === 15 || sorted[i+1].val === 15 || sorted[i+1].val !== sorted[i].val + 1) {
-                            isStraight = false;
-                            break;
-                        }
-                    }
-                    if (isStraight) {
-                        return { type: COMBO_TYPES.STRAIGHT, length: len, highestCard: sorted[len - 1] };
-                    }
-                }
-
-                // 6. Consecutive Pairs Check (3 đôi thông, 4 đôi thông, etc.)
-                if (len >= 6 && len % 2 === 0) {
-                    let isPairs = true;
-                    const pairs = [];
-                    for (let i = 0; i < len; i += 2) {
-                        if (sorted[i].val !== sorted[i+1].val) {
-                            isPairs = false;
-                            break;
-                        }
-                        pairs.push(sorted[i+1]); // High card of each pair
-                    }
-
-                    if (isPairs) {
-                        let isConsecutive = true;
-                        for (let i = 0; i < pairs.length - 1; i++) {
-                            if (pairs[i].val === 15 || pairs[i+1].val === 15 || pairs[i+1].val !== pairs[i].val + 1) {
-                                isConsecutive = false;
-                                break;
-                            }
-                        }
-
-                        if (isConsecutive) {
-                            if (pairs.length === 3) {
-                                return { type: COMBO_TYPES.THREE_PAIRS_CONT, highestCard: sorted[len - 1] };
-                            }
-                            if (pairs.length === 4) {
-                                return { type: COMBO_TYPES.FOUR_PAIRS_CONT, highestCard: sorted[len - 1] };
-                            }
-                        }
-                    }
-                }
-
-                return { type: COMBO_TYPES.INVALID };
-            }
-
-            /**
-             * Check if new combo beats existing combo according to Tien Len Mien Nam rules
-             */
-            static canBeat(newCards, topCombo) {
-                const newCombo = this.analyze(newCards);
-                if (newCombo.type === COMBO_TYPES.INVALID) return false;
-
-                // If table is clear, any valid combination is playable
-                if (!topCombo) return true;
-
-                // Special Chopping Rules (Luật chặt)
-                // 4 Đôi thông can chop: Single 2, Pair of 2, Tứ quý, smaller 3 đôi thông, smaller 4 đôi thông
-                if (newCombo.type === COMBO_TYPES.FOUR_PAIRS_CONT) {
-                    if (topCombo.type === COMBO_TYPES.SINGLE && topCombo.highestCard.val === 15) return true;
-                    if (topCombo.type === COMBO_TYPES.PAIR && topCombo.highestCard.val === 15) return true;
-                    if (topCombo.type === COMBO_TYPES.FOUR_OF_A_KIND) return true;
-                    if (topCombo.type === COMBO_TYPES.THREE_PAIRS_CONT) return true;
-                    if (topCombo.type === COMBO_TYPES.FOUR_PAIRS_CONT) {
-                        return newCombo.highestCard.id > topCombo.highestCard.id;
-                    }
-                }
-
-                // Tứ quý can chop: Single 2, 3 đôi thông, smaller Tứ quý
-                if (newCombo.type === COMBO_TYPES.FOUR_OF_A_KIND) {
-                    if (topCombo.type === COMBO_TYPES.SINGLE && topCombo.highestCard.val === 15) return true;
-                    if (topCombo.type === COMBO_TYPES.THREE_PAIRS_CONT) return true;
-                    if (topCombo.type === COMBO_TYPES.FOUR_OF_A_KIND) {
-                        return newCombo.highestCard.id > topCombo.highestCard.id;
-                    }
-                }
-
-                // 3 Đôi thông can chop: Single 2, smaller 3 đôi thông
-                if (newCombo.type === COMBO_TYPES.THREE_PAIRS_CONT) {
-                    if (topCombo.type === COMBO_TYPES.SINGLE && topCombo.highestCard.val === 15) return true;
-                    if (topCombo.type === COMBO_TYPES.THREE_PAIRS_CONT) {
-                        return newCombo.highestCard.id > topCombo.highestCard.id;
-                    }
-                }
-
-                // Standard Same-Type Matching Rules
-                if (newCombo.type !== topCombo.type) return false;
-
-                // For straights, length must match
-                if (newCombo.type === COMBO_TYPES.STRAIGHT && newCombo.length !== topCombo.length) {
-                    return false;
-                }
-
-                // Normal comparison by highest card power
-                return newCombo.highestCard.id > topCombo.highestCard.id;
-            }
+    function initGame() {
+        createDeck();
+        shuffleDeck();
+        hands = [[], [], [], []];
+        for (let i = 0; i < 52; i++) {
+            hands[i % 4].push(deck[i]);
         }
+        sortHand();
+        renderHand();
+        updateUI();
+        document.getElementById('status-msg').innerText = "Ván mới bắt đầu - Đến lượt bạn!";
+    }
 
-        // --- Game Engine Class ---
-        class TienLenGame {
-            constructor() {
-                this.players = [
-                    { id: 0, name: "Bạn", isAI: false, hand: [], rank: 0 },
-                    { id: 1, name: "Bot Tây", isAI: true, hand: [], rank: 0 },
-                    { id: 2, name: "Bot Bắc", isAI: true, hand: [], rank: 0 },
-                    { id: 3, name: "Bot Đông", isAI: true, hand: [], rank: 0 }
-                ];
-                this.currentTurn = 0;
-                this.tableCards = null; // Top combination on table
-                this.lastPlayerPlayed = -1;
-                this.passedPlayers = new Set();
-                this.selectedCardIds = new Set();
-                this.finishedCount = 0;
-                this.isFirstTurnOfGame = true;
-                this.sortByRank = true; // true: sort by value/rank, false: sort by suit
-            }
+    function sortHand() {
+        hands[0].sort((a, b) => a.val - b.val);
+        selectedIndices = [];
+        renderHand();
+    }
 
-            startNewGame() {
-                // Generate deck
-                let deck = [];
-                RANKS.forEach(r => {
-                    SUITS.forEach(s => {
-                        deck.push(new Card(r, s));
-                    });
-                });
+    function renderHand() {
+        const handEl = document.getElementById('user-hand');
+        handEl.innerHTML = '';
+        hands[0].forEach((card, index) => {
+            const cardEl = document.createElement('div');
+            const isRed = card.suit === '♦' || card.suit === '♥';
+            cardEl.className = `card ${isRed ? 'red' : 'black'} ${selectedIndices.includes(index) ? 'selected' : ''}`;
+            cardEl.innerHTML = `
+                <div class="card-corner">${card.rank}<br>${card.suit}</div>
+                <div class="card-center-suit">${card.suit}</div>
+            `;
+            cardEl.onclick = () => toggleSelectCard(index);
+            handEl.appendChild(cardEl);
+        });
+    }
 
-                // Shuffle deck (Fisher-Yates)
-                for (let i = deck.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [deck[i], deck[j]] = [deck[j], deck[i]];
-                }
-
-                // Reset player hands & states
-                this.finishedCount = 0;
-                this.passedPlayers.clear();
-                this.tableCards = null;
-                this.lastPlayerPlayed = -1;
-                this.selectedCardIds.clear();
-                this.isFirstTurnOfGame = true;
-
-                this.players.forEach(p => {
-                    p.hand = [];
-                    p.rank = 0;
-                });
-
-                // Deal 13 cards to each player
-                for (let i = 0; i < 13; i++) {
-                    this.players.forEach(p => p.hand.push(deck.pop()));
-                }
-
-                // Auto sort human cards
-                this.sortHand(this.players[0]);
-
-                // Determine who starts (Player holding 3 Spades 3♠ starts first)
-                let starter = 0;
-                this.players.forEach(p => {
-                    if (p.hand.some(c => c.val === 3 && c.suitRank === 0)) {
-                        starter = p.id;
-                    }
-                });
-
-                this.currentTurn = starter;
-                ui.renderAll();
-                ui.logStatus(`${this.players[starter].name} giữ 3♠ và được quyền đi trước!`);
-
-                if (this.players[this.currentTurn].isAI) {
-                    setTimeout(() => this.processAITurn(), 1200);
-                }
-            }
-
-            sortHand(player) {
-                if (this.sortByRank) {
-                    player.hand.sort((a, b) => a.id - b.id);
-                } else {
-                    player.hand.sort((a, b) => (a.suitRank * 100 + a.val) - (b.suitRank * 100 + b.val));
-                }
-            }
-
-            playTurn(cards) {
-                const player = this.players[this.currentTurn];
-
-                // Remove played cards from player hand
-                player.hand = player.hand.filter(c => !cards.some(rc => rc.id === c.id));
-                
-                // Set played cards as top combination on table
-                const combo = CombinationAnalyzer.analyze(cards);
-                this.tableCards = combo;
-                this.lastPlayerPlayed = player.id;
-                this.isFirstTurnOfGame = false;
-
-                // Sound effect
-                if (combo.type === COMBO_TYPES.FOUR_OF_A_KIND || 
-                    combo.type === COMBO_TYPES.THREE_PAIRS_CONT || 
-                    combo.type === COMBO_TYPES.FOUR_PAIRS_CONT) {
-                    sound.playChopSound();
-                    ui.logStatus(`🔥 ${player.name} CHẶT!`);
-                } else {
-                    sound.playCardSound();
-                    ui.logStatus(`${player.name} đã đánh ${cards.length} lá.`);
-                }
-
-                // Check victory condition
-                if (player.hand.length === 0 && player.rank === 0) {
-                    this.finishedCount++;
-                    player.rank = this.finishedCount;
-                    ui.logStatus(`🎉 ${player.name} đã về hạng ${player.rank}!`);
-                    if (player.id === 0) sound.playWinSound();
-                }
-
-                // Clear selections
-                this.selectedCardIds.clear();
-
-                // Move to next player
-                this.advanceTurn();
-            }
-
-            passTurn() {
-                const player = this.players[this.currentTurn];
-                this.passedPlayers.add(player.id);
-                sound.playPassSound();
-                ui.logStatus(`${player.name} đã bỏ lượt.`);
-
-                this.advanceTurn();
-            }
-
-            advanceTurn() {
-                // Check if game is over (3 players finished or 1 left)
-                const activePlayers = this.players.filter(p => p.hand.length > 0);
-                if (activePlayers.length <= 1) {
-                    if (activePlayers.length === 1) {
-                        this.finishedCount++;
-                        activePlayers[0].rank = this.finishedCount;
-                    }
-                    ui.showGameOverModal();
-                    return;
-                }
-
-                // Find next eligible player
-                let next = (this.currentTurn + 1) % 4;
-                
-                // If round is finished (everyone else passed or all other active players passed)
-                while (true) {
-                    // Check if round resets to last played player
-                    if (next === this.lastPlayerPlayed) {
-                        this.passedPlayers.clear();
-                        this.tableCards = null;
-                        ui.logStatus(`Vòng mới! ${this.players[next].name} được tự do đánh.`);
-                        break;
-                    }
-
-                    // If player is still in round and has cards left
-                    if (!this.passedPlayers.has(next) && this.players[next].hand.length > 0) {
-                        break;
-                    }
-
-                    // Check if only one active player is left in the round
-                    const remainingInRound = this.players.filter(p => p.hand.length > 0 && !this.passedPlayers.has(p.id));
-                    if (remainingInRound.length === 1 && remainingInRound[0].id === next) {
-                        this.passedPlayers.clear();
-                        this.tableCards = null;
-                        ui.logStatus(`Vòng mới! ${this.players[next].name} được tự do đánh.`);
-                        break;
-                    }
-
-                    next = (next + 1) % 4;
-                }
-
-                this.currentTurn = next;
-                ui.renderAll();
-
-                if (this.players[this.currentTurn].isAI) {
-                    setTimeout(() => this.processAITurn(), 1000);
-                }
-            }
-
-            // AI Decision Engine
-            processAITurn() {
-                const ai = this.players[this.currentTurn];
-                if (ai.hand.length === 0) {
-                    this.advanceTurn();
-                    return;
-                }
-
-                // Sort AI hand by power rank
-                ai.hand.sort((a, b) => a.id - b.id);
-
-                const validMove = this.findAIMove(ai.hand);
-
-                if (validMove && validMove.length > 0) {
-                    this.playTurn(validMove);
-                } else {
-                    // Cannot or chooses not to play
-                    if (!this.tableCards) {
-                        // AI MUST play if leading new round
-                        this.playTurn([ai.hand[0]]);
-                    } else {
-                        this.passTurn();
-                    }
-                }
-            }
-
-            findAIMove(hand) {
-                // Must play 3♠ on first turn of the game
-                if (this.isFirstTurnOfGame) {
-                    const card3S = hand.find(c => c.val === 3 && c.suitRank === 0);
-                    if (card3S) return [card3S];
-                }
-
-                // Case 1: AI is Leading (New Round)
-                if (!this.tableCards) {
-                    // 1. Look for Straights (length >= 3)
-                    const straight = this.findLowestStraight(hand, 3);
-                    if (straight) return straight;
-
-                    // 2. Look for Pairs
-                    const pair = this.findLowestPair(hand);
-                    if (pair) return pair;
-
-                    // 3. Play lowest single card
-                    return [hand[0]];
-                }
-
-                // Case 2: AI is Following existing table combination
-                const top = this.tableCards;
-
-                if (top.type === COMBO_TYPES.SINGLE) {
-                    // Try to beat with lowest valid single card
-                    for (let card of hand) {
-                        if (card.id > top.highestCard.id) return [card];
-                    }
-                    // Try chopping single 2 with 3 đôi thông / Tứ quý if available
-                    if (top.highestCard.val === 15) {
-                        const chop = this.findChopCombo(hand);
-                        if (chop) return chop;
-                    }
-                } else if (top.type === COMBO_TYPES.PAIR) {
-                    // Try to beat pair
-                    const pairs = this.findAllPairs(hand);
-                    for (let pair of pairs) {
-                        if (pair[1].id > top.highestCard.id) return pair;
-                    }
-                    // Try chopping pair of 2s with 4 đôi thông
-                    if (top.highestCard.val === 15) {
-                        const fourPairs = this.findFourPairsCont(hand);
-                        if (fourPairs) return fourPairs;
-                    }
-                } else if (top.type === COMBO_TYPES.TRIPLE) {
-                    // Try to beat triple
-                    const triples = this.findAllTriples(hand);
-                    for (let triple of triples) {
-                        if (triple[2].id > top.highestCard.id) return triple;
-                    }
-                } else if (top.type === COMBO_TYPES.STRAIGHT) {
-                    // Try matching straight of same length
-                    const straight = this.findBeatingStraight(hand, top.length, top.highestCard.id);
-                    if (straight) return straight;
-                } else if (top.type === COMBO_TYPES.FOUR_OF_A_KIND || 
-                           top.type === COMBO_TYPES.THREE_PAIRS_CONT || 
-                           top.type === COMBO_TYPES.FOUR_PAIRS_CONT) {
-                    // Try higher chopping combination
-                    const chop = this.findChopComboToBeat(hand, top);
-                    if (chop) return chop;
-                }
-
-                return null; // Pass
-            }
-
-            // --- AI Helper Functions ---
-            findLowestPair(hand) {
-                for (let i = 0; i < hand.length - 1; i++) {
-                    if (hand[i].val === hand[i+1].val) {
-                        return [hand[i], hand[i+1]];
-                    }
-                }
-                return null;
-            }
-
-            findAllPairs(hand) {
-                const pairs = [];
-                for (let i = 0; i < hand.length - 1; i++) {
-                    if (hand[i].val === hand[i+1].val) {
-                        pairs.push([hand[i], hand[i+1]]);
-                    }
-                }
-                return pairs;
-            }
-
-            findAllTriples(hand) {
-                const triples = [];
-                for (let i = 0; i < hand.length - 2; i++) {
-                    if (hand[i].val === hand[i+1].val && hand[i+1].val === hand[i+2].val) {
-                        triples.push([hand[i], hand[i+1], hand[i+2]]);
-                    }
-                }
-                return triples;
-            }
-
-            findLowestStraight(hand, minLen = 3) {
-                // Unique values non-2 cards
-                const validCards = hand.filter(c => c.val < 15);
-                const valMap = new Map();
-                validCards.forEach(c => {
-                    if (!valMap.has(c.val)) valMap.set(c.val, []);
-                    valMap.get(c.val).push(c);
-                });
-
-                const sortedVals = Array.from(valMap.keys()).sort((a,b) => a - b);
-                let currentSeq = [];
-
-                for (let i = 0; i < sortedVals.length; i++) {
-                    if (currentSeq.length === 0 || sortedVals[i] === sortedVals[i-1] + 1) {
-                        currentSeq.push(sortedVals[i]);
-                    } else {
-                        if (currentSeq.length >= minLen) break;
-                        currentSeq = [sortedVals[i]];
-                    }
-                }
-
-                if (currentSeq.length >= minLen) {
-                    return currentSeq.map(v => valMap.get(v)[0]);
-                }
-                return null;
-            }
-
-            findBeatingStraight(hand, targetLen, targetHighestId) {
-                const validCards = hand.filter(c => c.val < 15);
-                const valMap = new Map();
-                validCards.forEach(c => {
-                    if (!valMap.has(c.val)) valMap.set(c.val, []);
-                    valMap.get(c.val).push(c);
-                });
-
-                const sortedVals = Array.from(valMap.keys()).sort((a,b) => a - b);
-                
-                // Sliding window search for matching length
-                for (let i = 0; i <= sortedVals.length - targetLen; i++) {
-                    let isCont = true;
-                    for (let j = 0; j < targetLen - 1; j++) {
-                        if (sortedVals[i + j + 1] !== sortedVals[i + j] + 1) {
-                            isCont = false;
-                            break;
-                        }
-                    }
-                    if (isCont) {
-                        const candidate = [];
-                        for (let j = 0; j < targetLen - 1; j++) {
-                            candidate.push(valMap.get(sortedVals[i + j])[0]);
-                        }
-                        // Choose highest suit for ending card if possible
-                        const topValCards = valMap.get(sortedVals[i + targetLen - 1]);
-                        const highestCard = topValCards[topValCards.length - 1];
-                        candidate.push(highestCard);
-
-                        if (highestCard.id > targetHighestId) {
-                            return candidate;
-                        }
-                    }
-                }
-                return null;
-            }
-
-            findChopCombo(hand) {
-                // Tứ quý or 3 đôi thông
-                const four = this.findFourOfAKind(hand);
-                if (four) return four;
-                const threePairs = this.findThreePairsCont(hand);
-                if (threePairs) return threePairs;
-                return null;
-            }
-
-            findChopComboToBeat(hand, topCombo) {
-                const fourPairs = this.findFourPairsCont(hand);
-                if (fourPairs && CombinationAnalyzer.canBeat(fourPairs, topCombo)) return fourPairs;
-
-                const four = this.findFourOfAKind(hand);
-                if (four && CombinationAnalyzer.canBeat(four, topCombo)) return four;
-
-                const threePairs = this.findThreePairsCont(hand);
-                if (threePairs && CombinationAnalyzer.canBeat(threePairs, topCombo)) return threePairs;
-
-                return null;
-            }
-
-            findFourOfAKind(hand) {
-                for (let i = 0; i < hand.length - 3; i++) {
-                    if (hand[i].val === hand[i+3].val) {
-                        return [hand[i], hand[i+1], hand[i+2], hand[i+3]];
-                    }
-                }
-                return null;
-            }
-
-            findThreePairsCont(hand) {
-                const pairs = this.findAllPairs(hand);
-                if (pairs.length < 3) return null;
-
-                for (let i = 0; i <= pairs.length - 3; i++) {
-                    if (pairs[i][0].val < 15 &&
-                        pairs[i+1][0].val === pairs[i][0].val + 1 &&
-                        pairs[i+2][0].val === pairs[i+1][0].val + 1) {
-                        return [...pairs[i], ...pairs[i+1], ...pairs[i+2]];
-                    }
-                }
-                return null;
-            }
-
-            findFourPairsCont(hand) {
-                const pairs = this.findAllPairs(hand);
-                if (pairs.length < 4) return null;
-
-                for (let i = 0; i <= pairs.length - 4; i++) {
-                    if (pairs[i][0].val < 15 &&
-                        pairs[i+1][0].val === pairs[i][0].val + 1 &&
-                        pairs[i+2][0].val === pairs[i+1][0].val + 1 &&
-                        pairs[i+3][0].val === pairs[i+2][0].val + 1) {
-                        return [...pairs[i], ...pairs[i+1], ...pairs[i+2], ...pairs[i+3]];
-                    }
-                }
-                return null;
-            }
+    function toggleSelectCard(index) {
+        if (selectedIndices.includes(index)) {
+            selectedIndices = selectedIndices.filter(i => i !== index);
+        } else {
+            selectedIndices.push(index);
         }
+        renderHand();
+    }
 
-        // --- UI Controller Class ---
-        class UIController {
-            constructor() {
-                this.btnPlay = document.getElementById('btn-play');
-                this.btnPass = document.getElementById('btn-pass');
-                this.btnSort = document.getElementById('btn-sort');
-                this.btnRestart = document.getElementById('btn-restart');
-                this.soundBtn = document.getElementById('sound-btn');
+    function updateUI() {
+        document.getElementById('p1-count').innerText = `${hands[1].length} lá`;
+        document.getElementById('p2-count').innerText = `${hands[2].length} lá`;
+        document.getElementById('p3-count').innerText = `${hands[3].length} lá`;
+    }
 
-                this.statusMsg = document.getElementById('status-msg');
-                this.lastAction = document.getElementById('last-action');
-                this.playedCardsElem = document.getElementById('played-cards');
-                this.playerHandElem = document.getElementById('player-hand');
+    function playSelectedCards() {
+        if (selectedIndices.length === 0) return;
+        selectedIndices.sort((a, b) => b - a);
+        const playedCards = [];
+        selectedIndices.forEach(i => {
+            playedCards.push(hands[0].splice(i, 1)[0]);
+        });
+        selectedIndices = [];
+        renderCenterCards(playedCards);
+        renderHand();
+        updateUI();
 
-                this.gameOverModal = document.getElementById('game-over-modal');
-                this.rankingsList = document.getElementById('rankings-list');
-                this.btnModalRestart = document.getElementById('btn-modal-restart');
-
-                this.bindEvents();
-            }
-
-            bindEvents() {
-                this.btnPlay.addEventListener('click', () => this.handlePlayClick());
-                this.btnPass.addEventListener('click', () => game.passTurn());
-                this.btnSort.addEventListener('click', () => {
-                    game.sortByRank = !game.sortByRank;
-                    game.sortHand(game.players[0]);
-                    this.renderPlayerHand();
-                });
-                this.btnRestart.addEventListener('click', () => game.startNewGame());
-                this.btnModalRestart.addEventListener('click', () => {
-                    this.gameOverModal.classList.remove('show');
-                    game.startNewGame();
-                });
-
-                this.soundBtn.addEventListener('click', () => {
-                    sound.enabled = !sound.enabled;
-                    this.soundBtn.textContent = sound.enabled ? '🔊' : '🔇';
-                });
-            }
-
-            logStatus(msg) {
-                this.lastAction.textContent = msg;
-                this.statusMsg.textContent = msg;
-            }
-
-            renderCardElement(card, isSelectable = false) {
-                const cardDiv = document.createElement('div');
-                cardDiv.className = `card ${card.color}`;
-                cardDiv.dataset.id = card.id;
-
-                cardDiv.innerHTML = `
-                    <div class="card-corner top-left">
-                        <span class="card-val">${card.rankName}</span>
-                        <span class="card-suit">${card.suit}</span>
-                    </div>
-                    <div class="card-center-suit">${card.suit}</div>
-                    <div class="card-corner bottom-right">
-                        <span class="card-val">${card.rankName}</span>
-                        <span class="card-suit">${card.suit}</span>
-                    </div>
-                `;
-
-                if (isSelectable) {
-                    if (game.selectedCardIds.has(card.id)) {
-                        cardDiv.classList.add('selected');
-                    }
-                    cardDiv.addEventListener('click', () => {
-                        if (game.selectedCardIds.has(card.id)) {
-                            game.selectedCardIds.delete(card.id);
-                        } else {
-                            game.selectedCardIds.add(card.id);
-                        }
-                        this.renderPlayerHand();
-                        this.updateButtonStates();
-                    });
-                }
-
-                return cardDiv;
-            }
-
-            renderPlayerHand() {
-                this.playerHandElem.innerHTML = '';
-                const human = game.players[0];
-
-                human.hand.forEach(card => {
-                    const cardElem = this.renderCardElement(card, true);
-                    this.playerHandElem.appendChild(cardElem);
-                });
-            }
-
-            renderBotCards() {
-                [1, 2, 3].forEach(id => {
-                    const container = document.getElementById(`p${id}-cards`);
-                    const countElem = document.getElementById(`p${id}-count`);
-                    const hand = game.players[id].hand;
-
-                    container.innerHTML = '';
-                    countElem.textContent = `${hand.length} lá`;
-
-                    // Render small back covers for bot cards
-                    hand.forEach(() => {
-                        const back = document.createElement('div');
-                        back.className = 'card-back';
-                        back.innerHTML = '<div class="card-back-pattern"></div>';
-                        container.appendChild(back);
-                    });
-                });
-
-                document.getElementById('p0-count').textContent = `${game.players[0].hand.length} lá`;
-            }
-
-            renderTableCards() {
-                this.playedCardsElem.innerHTML = '';
-                if (game.tableCards && game.tableCards.type !== COMBO_TYPES.INVALID) {
-                    // Reconstruct cards array to render
-                    const cardsToRender = game.players[game.lastPlayerPlayed].lastPlayedCards || [];
-                    cardsToRender.forEach(card => {
-                        const cardElem = this.renderCardElement(card, false);
-                        this.playedCardsElem.appendChild(cardElem);
-                    });
-                } else {
-                    this.playedCardsElem.innerHTML = '<span style="color: rgba(255,255,255,0.4); font-size: 13px;">Bàn trống</span>';
-                }
-            }
-
-            renderAvatarsAndTurn() {
-                game.players.forEach(p => {
-                    const box = document.getElementById(`p${p.id}-box`);
-                    const badge = document.getElementById(`p${p.id}-badge`);
-
-                    // Reset state classes
-                    box.classList.remove('active', 'passed');
-
-                    if (p.id === game.currentTurn) {
-                        box.classList.add('active');
-                    }
-                    if (game.passedPlayers.has(p.id)) {
-                        box.classList.add('passed');
-                    }
-
-                    if (p.rank > 0) {
-                        const titles = ["", "🥇 Nhất", "🥈 Nhì", "🥉 Ba", "🔒 Bét"];
-                        badge.innerHTML = `<span class="rank-badge">${titles[p.rank]}</span>`;
-                    } else {
-                        badge.innerHTML = '';
-                    }
-                });
-            }
-
-            updateButtonStates() {
-                const isHumanTurn = game.currentTurn === 0;
-                
-                // Human selected cards
-                const selectedCards = game.players[0].hand.filter(c => game.selectedCardIds.has(c.id));
-                const isValidPlay = CombinationAnalyzer.canBeat(selectedCards, game.tableCards);
-
-                // Enforce 3♠ on very first turn
-                let firstTurnValid = true;
-                if (game.isFirstTurnOfGame && isHumanTurn) {
-                    firstTurnValid = selectedCards.some(c => c.val === 3 && c.suitRank === 0);
-                }
-
-                this.btnPlay.disabled = !isHumanTurn || !isValidPlay || !firstTurnValid;
-
-                // Pass button disabled if human is leading or round just started
-                const isLeading = !game.tableCards || game.lastPlayerPlayed === 0;
-                this.btnPass.disabled = !isHumanTurn || isLeading;
-            }
-
-            renderAll() {
-                this.renderPlayerHand();
-                this.renderBotCards();
-                this.renderTableCards();
-                this.renderAvatarsAndTurn();
-                this.updateButtonStates();
-            }
-
-            handlePlayClick() {
-                const selectedCards = game.players[0].hand.filter(c => game.selectedCardIds.has(c.id));
-                // Store reference for table render
-                game.players[0].lastPlayedCards = [...selectedCards];
-                game.playTurn(selectedCards);
-            }
-
-            showGameOverModal() {
-                this.rankingsList.innerHTML = '';
-                const sortedPlayers = [...game.players].sort((a, b) => a.rank - b.rank);
-
-                const titles = ["", "🥇 Hạng Nhất", "🥈 Hạng Nhì", "🥉 Hạng Ba", "🔒 Hạng Bét"];
-
-                sortedPlayers.forEach(p => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<span>${p.name}</span><strong>${titles[p.rank]}</strong>`;
-                    this.rankingsList.appendChild(li);
-                });
-
-                this.gameOverModal.classList.add('show');
-            }
+        if (hands[0].length === 0) {
+            // Bạn Thắng
+            money[0] += currentBet * 3;
+            money[1] -= currentBet;
+            money[2] -= currentBet;
+            money[3] -= currentBet;
+            updateMoneyUI();
+            alert(`🎉 Chúc mừng! Bạn thắng ván cược +${formatMoney(currentBet * 3)} Polime!`);
+            document.getElementById('bet-modal').style.display = 'flex';
         }
+    }
 
-        // --- Global Engine Initialization ---
-        let game = null;
-        let ui = null;
+    function passTurn() {
+        document.getElementById('status-msg').innerText = "Bạn đã bỏ lượt!";
+    }
 
-        window.onload = function() {
-            game = new TienLenGame();
-            ui = new UIController();
+    function renderCenterCards(cards) {
+        const centerEl = document.getElementById('center-cards');
+        centerEl.innerHTML = '';
+        cards.forEach(card => {
+            const isRed = card.suit === '♦' || card.suit === '♥';
+            const cardEl = document.createElement('div');
+            cardEl.className = `card ${isRed ? 'red' : 'black'}`;
+            cardEl.innerHTML = `
+                <div class="card-corner">${card.rank}<br>${card.suit}</div>
+                <div class="card-center-suit">${card.suit}</div>
+            `;
+            centerEl.appendChild(cardEl);
+        });
+    }
 
-            // Override playTurn to log played cards reference for visual display
-            const originalPlayTurn = game.playTurn.bind(game);
-            game.playTurn = function(cards) {
-                game.players[game.currentTurn].lastPlayedCards = [...cards];
-                originalPlayTurn(cards);
-            };
-
-            // Start first game
-            game.startNewGame();
-        };
-    </script>
+    // Khởi tạo
+    loadSavedMoney();
+</script>
 </body>
 </html>
